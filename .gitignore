@@ -21,3 +21,7 @@ yarn-error.log*
 
 # coverage
 coverage
+
+# Bubblewrap / empaquetado Android (.apk) — nunca versionar el keystore
+# ni las herramientas locales (JDK/Android SDK, varios GB).
+android-twa/
