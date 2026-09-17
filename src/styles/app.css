@@ -440,6 +440,20 @@ select:focus {
   color: var(--color-primario-oscuro);
 }
 
+.enlace-descarga-apk {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  margin: 4px 0 16px;
+}
+
+.pie-version {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.78rem;
+  margin: 28px 0 0;
+}
+
 .toast-offline {
   position: fixed;
   left: 50%;

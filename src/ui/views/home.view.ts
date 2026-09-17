@@ -18,6 +18,16 @@ export async function render(contenedor: HTMLElement): Promise<void> {
   acciones.append(botonNueva, botonExportar)
   contenedor.append(acciones)
 
+  // Enlace de descarga directa del .apk, para compartir esta misma URL con
+  // cualquier profesor: entra desde el celular, toca acá, y Android le
+  // ofrece instalarlo (sin pasar por WhatsApp/Drive).
+  const enlaceApk = document.createElement('a')
+  enlaceApk.href = `${import.meta.env.BASE_URL}descargas/ExamenEF.apk`
+  enlaceApk.download = 'ExamenEF.apk'
+  enlaceApk.className = 'boton boton-texto enlace-descarga-apk'
+  enlaceApk.textContent = '⬇ Descargar app para Android (.apk)'
+  contenedor.append(enlaceApk)
+
   const listaContenedor = el('div', { clase: 'lista-sesiones' })
   listaContenedor.append(el('p', { clase: 'texto-ayuda', texto: 'Cargando sesiones...' }))
   contenedor.append(listaContenedor)
@@ -29,12 +39,15 @@ export async function render(contenedor: HTMLElement): Promise<void> {
     listaContenedor.append(
       el('p', { clase: 'texto-ayuda', texto: 'Todavía no hay sesiones cargadas. Creá la primera con "+ Nueva sesión".' }),
     )
-    return
+  } else {
+    for (const sesion of sesiones) {
+      listaContenedor.append(await crearTarjetaSesion(sesion))
+    }
   }
 
-  for (const sesion of sesiones) {
-    listaContenedor.append(await crearTarjetaSesion(sesion))
-  }
+  // Número de versión visible para confirmar de un vistazo si ya llegó una
+  // actualización, sin depender de que se note el cartel de "nueva versión".
+  contenedor.append(el('p', { clase: 'pie-version', texto: `AppEF v${__APP_VERSION__}` }))
 }
 
 async function crearTarjetaSesion(sesion: Sesion): Promise<HTMLElement> {

@@ -1,6 +1,12 @@
 /// <reference types="vitest/config" />
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+
+const paquete = JSON.parse(
+  readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf-8'),
+) as { version: string }
 
 export default defineConfig({
   root: '.',
@@ -10,6 +16,12 @@ export default defineConfig({
   base: '/AppEF/',
   build: {
     outDir: 'dist',
+  },
+  // Número de versión visible en la app (pie de la pantalla de inicio), para
+  // que el profesor pueda confirmar de un vistazo si ya le llegó una
+  // actualización, sin depender de que note el cartel de "nueva versión".
+  define: {
+    __APP_VERSION__: JSON.stringify(paquete.version),
   },
   plugins: [
     VitePWA({

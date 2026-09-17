@@ -78,20 +78,41 @@ para no interrumpir una carga de examen en la mitad de la cancha: el
 profesor decide cuándo tocar "Actualizar" (por ejemplo, entre un ejercicio y
 otro).
 
-## Cómo generar el .apk instalable (PWABuilder)
+## Cómo instala la app un profesor (distribución)
 
-Con la app ya publicada en GitHub Pages, se puede generar un instalador
-`.apk` para Android sin necesidad de subirla a Google Play:
+La forma más simple: compartir este link, desde el celular del profesor,
+abierto en Chrome:
 
-1. Entrar a [pwabuilder.com](https://www.pwabuilder.com/).
-2. Pegar la URL publicada (`https://<usuario>.github.io/AppEF/`) y analizar.
-3. Elegir la opción de descargar el paquete para **Android**.
-4. Descargar el `.apk` generado y pasarlo al celular (por ejemplo, por
-   WhatsApp, Drive o cable USB).
-5. En el celular, al abrir el archivo `.apk`, Android va a pedir habilitar
-   "Instalar apps de orígenes desconocidos" (u "orígenes no confiables") para
-   esa app que se usa para abrirlo (el navegador o el gestor de archivos).
-   Hay que habilitarlo y confirmar la instalación.
+**`https://idellamea.github.io/AppEF/`**
+
+Ahí mismo, en la pantalla de inicio, hay un botón **"⬇ Descargar app para
+Android (.apk)"**. Al tocarlo:
+
+1. Chrome descarga el archivo `ExamenEF.apk`.
+2. Al abrirlo, Android va a pedir habilitar "Instalar apps de orígenes
+   desconocidos" para Chrome (o el gestor de archivos) — es un permiso único
+   por app instaladora, no hay que repetirlo cada vez.
+3. Se instala como una app normal, con su propio ícono, **sin ninguna barra
+   de navegador ni URL visible** (gracias a la verificación de Digital Asset
+   Links configurada en `idellamea.github.io/.well-known/assetlinks.json`).
+
+No hace falta pasar el archivo por WhatsApp ni Drive: cualquiera con ese link
+se instala la app sola. El contenido de la app se sigue actualizando solo con
+cada push a `main` (ver arriba); el `.apk` en sí solo cambia si se toca el
+"cascarón" nativo (ver `android-twa/BUILD-NOTES.md`), y en ese caso hay que
+reemplazar `public/descargas/ExamenEF.apk` por el nuevo build y volver a
+publicar.
+
+### Alternativa: PWABuilder (sin compilar nada localmente)
+
+Si en algún momento no se dispone de las herramientas de `android-twa/`
+(JDK/Android SDK locales), se puede regenerar el mismo tipo de `.apk` desde
+[pwabuilder.com](https://www.pwabuilder.com/): pegar la URL publicada,
+analizar, y descargar el paquete para Android. El resultado cumple la misma
+función, pero **hay que volver a firmarlo con la keystore de
+`android-twa/android.keystore`** si se quiere mantener la misma identidad de
+app (si no, Android lo trata como una app distinta y no se puede "actualizar"
+sobre una instalación existente).
 
 ## Estructura del proyecto
 
