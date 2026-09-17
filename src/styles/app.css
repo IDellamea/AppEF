@@ -70,16 +70,35 @@ body {
   align-items: center;
   justify-content: center;
   gap: 2px;
+  min-height: var(--alto-nav-inferior);
   background: none;
   border: none;
   color: var(--color-primario-oscuro);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
+  transition: background-color var(--transicion), color var(--transicion), opacity var(--transicion);
+}
+
+.nav-inferior-boton:active {
+  background: var(--color-primario-claro);
+}
+
+.nav-inferior-boton:disabled {
+  color: var(--color-texto-tenue);
+  opacity: 0.45;
+  cursor: default;
 }
 
 .nav-inferior-icono {
-  font-size: 1.3rem;
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+}
+
+.nav-inferior-icono svg {
+  width: 100%;
+  height: 100%;
 }
 
 h1 {

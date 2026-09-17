@@ -5,7 +5,7 @@ import { listarAlumnosDeSesion } from '../../data/alumnos.repo.ts'
 import { generarExcelSesion } from '../../export/excel.ts'
 import { segundosATiempo } from '../../domain/parseo.ts'
 import { el } from '../dom.ts'
-import { navegar, type ParametrosRuta } from '../router.ts'
+import type { ParametrosRuta } from '../router.ts'
 import type { Alumno, Ejercicio } from '../../domain/types.ts'
 
 function celdaEjercicio(alumno: Alumno, ejercicio: Ejercicio): string {
@@ -92,8 +92,4 @@ export async function render(contenedor: HTMLElement, parametros: ParametrosRuta
     })
     contenedor.append(el('div', { clase: 'tabla-scroll', hijos: [tabla] }))
   }
-
-  const botonVolver = el('button', { clase: 'boton boton-texto', texto: '← Volver a ejercicios' })
-  botonVolver.addEventListener('click', () => navegar(`/sesion/${sesionId}/ejercicios`))
-  contenedor.append(botonVolver)
 }

@@ -1,13 +1,13 @@
 // Pantalla principal de carga: un ejercicio, todos los alumnos, autosave por fila.
 
 import { obtenerSesion } from '../../data/sesiones.repo.ts'
-import { actualizarResultadoEjercicio, EJERCICIOS, listarAlumnosDeSesion } from '../../data/alumnos.repo.ts'
+import { actualizarResultadoEjercicio, listarAlumnosDeSesion } from '../../data/alumnos.repo.ts'
 import { crearInputTiempo } from '../components/inputTiempo.ts'
 import { crearInputDecimal } from '../components/inputDecimal.ts'
 import { crearTemporizador } from '../components/temporizador.ts'
 import { metrosDesdeCentimetros, segundosATiempo, tiempoASegundos } from '../../domain/parseo.ts'
 import { el } from '../dom.ts'
-import { generacionVista, navegar, type ParametrosRuta } from '../router.ts'
+import { type ParametrosRuta } from '../router.ts'
 import type { Alumno, Ejercicio } from '../../domain/types.ts'
 
 const ETIQUETAS_EJERCICIO: Record<Ejercicio, string> = {
@@ -44,7 +44,6 @@ export async function render(contenedor: HTMLElement, parametros: ParametrosRuta
     return
   }
   const ejercicio: Ejercicio = tipo
-  const generacion = generacionVista()
 
   const sesion = await obtenerSesion(sesionId)
   if (!sesion) {
@@ -53,12 +52,7 @@ export async function render(contenedor: HTMLElement, parametros: ParametrosRuta
   }
 
   const barraFija = el('div', { clase: 'barra-fija' })
-  const botonVolver = el('button', { clase: 'boton boton-texto', texto: '← Volver a ejercicios' })
-  botonVolver.addEventListener('click', () => navegar(`/sesion/${sesionId}/ejercicios`))
-  barraFija.append(
-    botonVolver,
-    el('span', { clase: 'barra-fija-titulo', texto: ETIQUETAS_EJERCICIO[ejercicio] }),
-  )
+  barraFija.append(el('span', { clase: 'barra-fija-titulo', texto: ETIQUETAS_EJERCICIO[ejercicio] }))
   contenedor.append(barraFija)
 
   contenedor.append(el('p', { clase: 'texto-ayuda', texto: AYUDA_EJERCICIO[ejercicio] }))
@@ -80,42 +74,26 @@ export async function render(contenedor: HTMLElement, parametros: ParametrosRuta
   const lista = el('div', { clase: 'lista-carga' })
   contenedor.append(lista)
 
-  const inputs: HTMLInputElement[] = []
   let pendientes = alumnos.filter((a) => a.resultados[ejercicio] === undefined).length
+  let avisoMostrado = false
 
-  const indiceActual = EJERCICIOS.indexOf(ejercicio)
-  const siguienteEjercicio = EJERCICIOS[indiceActual + 1]
-  const destinoAlTerminar = siguienteEjercicio
-    ? `/sesion/${sesionId}/ejercicio/${siguienteEjercicio}`
-    : `/sesion/${sesionId}/ejercicios`
-
+  // Solo confirma que ya se cargó a todos — no navega a ningún lado. El
+  // profesor decide cuándo pasar a otra pantalla (con "Volver" o "Inicio").
   const avisarCargaCompleta = (): void => {
     pendientes -= 1
-    if (pendientes > 0) return
-    if (generacionVista() !== generacion) return // el profesor ya navegó a otra pantalla
-    const aviso = el('p', {
-      clase: 'texto-ayuda texto-ayuda--exito',
-      texto: siguienteEjercicio
-        ? `¡Listo, ya cargaste a todos! Pasando a ${ETIQUETAS_EJERCICIO[siguienteEjercicio]}…`
-        : '¡Listo, ya cargaste a todos! Volviendo a la lista de ejercicios…',
-    })
-    contenedor.append(aviso)
-    setTimeout(() => navegar(destinoAlTerminar), 3000)
+    if (pendientes > 0 || avisoMostrado) return
+    avisoMostrado = true
+    contenedor.append(
+      el('p', { clase: 'texto-ayuda texto-ayuda--exito', texto: '¡Listo, ya cargaste a todos los alumnos!' }),
+    )
   }
 
-  alumnos.forEach((alumno, indice) => {
-    const { fila, input } = crearFilaCarga(alumno, ejercicio, () => inputs[indice + 1], avisarCargaCompleta)
-    inputs[indice] = input
-    lista.append(fila)
-  })
+  for (const alumno of alumnos) {
+    lista.append(crearFilaCarga(alumno, ejercicio, avisarCargaCompleta))
+  }
 }
 
-function crearFilaCarga(
-  alumno: Alumno,
-  ejercicio: Ejercicio,
-  obtenerSiguienteInput: () => HTMLInputElement | undefined,
-  onPrimeraCarga: () => void,
-): { fila: HTMLElement; input: HTMLInputElement } {
+function crearFilaCarga(alumno: Alumno, ejercicio: Ejercicio, onPrimeraCarga: () => void): HTMLElement {
   const resultadoActual = alumno.resultados[ejercicio]
   let yaContabilizado = resultadoActual !== undefined
 
@@ -218,7 +196,6 @@ function crearFilaCarga(
         yaContabilizado = true
         onPrimeraCarga()
       }
-      obtenerSiguienteInput()?.focus()
     } catch (error) {
       mostrarError(error instanceof Error ? error.message : 'No se pudo guardar el resultado.')
     }
@@ -232,7 +209,7 @@ function crearFilaCarga(
     }
   })
 
-  return { fila, input }
+  return fila
 }
 
 function textoIndicador(puntos: number | null): string {

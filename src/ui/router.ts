@@ -10,18 +10,6 @@ interface Ruta {
 
 const rutas: Ruta[] = []
 let contenedorRaiz: HTMLElement | null = null
-let generacionActual = 0
-
-/**
- * Número de la "generación" de vista actual. Cambia cada vez que el router
- * renderiza una ruta (incluida la misma ruta de nuevo). Una vista puede
- * capturarlo al arrancar y compararlo más tarde (ej. en un callback
- * asincrónico o un setTimeout) para saber si el usuario ya navegó a otro
- * lado mientras tanto, y evitar tocar un contenedor que ya no es "suyo".
- */
-export function generacionVista(): number {
-  return generacionActual
-}
 
 /** Registra una ruta. Los segmentos que empiezan con ":" son parámetros. */
 export function registrarRuta(patron: string, render: RenderVista): void {
@@ -62,7 +50,6 @@ function emparejarRuta(path: string): { render: RenderVista; parametros: Paramet
 
 async function manejarCambioDeRuta(): Promise<void> {
   if (!contenedorRaiz) return
-  generacionActual += 1
   const coincidencia = emparejarRuta(obtenerPathActual())
 
   if (!coincidencia) {

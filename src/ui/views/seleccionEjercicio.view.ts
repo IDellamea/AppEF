@@ -53,8 +53,4 @@ export async function render(contenedor: HTMLElement, parametros: ParametrosRuta
   const botonResumen = el('button', { clase: 'boton boton-secundario', texto: 'Ver resumen' })
   botonResumen.addEventListener('click', () => navegar(`/sesion/${sesionId}/resumen`))
   contenedor.append(botonResumen)
-
-  const botonVolver = el('button', { clase: 'boton boton-texto', texto: '← Volver a sesiones' })
-  botonVolver.addEventListener('click', () => navegar('/'))
-  contenedor.append(botonVolver)
 }
