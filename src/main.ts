@@ -2,6 +2,7 @@
 
 import './styles/app.css'
 import { iniciarRouter, registrarRuta } from './ui/router.ts'
+import { crearNavInferior } from './ui/navInferior.ts'
 import { iniciarActualizacionesPWA } from './pwa/updateBanner.ts'
 
 import { render as renderHome } from './ui/views/home.view.ts'
@@ -21,6 +22,7 @@ registrarRuta('/exportar', renderExportar)
 const app = document.querySelector<HTMLDivElement>('#app')
 if (app) {
   iniciarRouter(app)
+  app.after(crearNavInferior())
 }
 
 iniciarActualizacionesPWA()

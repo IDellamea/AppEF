@@ -11,6 +11,7 @@ import type { Alumno, Ejercicio } from '../../domain/types.ts'
 function celdaEjercicio(alumno: Alumno, ejercicio: Ejercicio): string {
   const resultado = alumno.resultados[ejercicio]
   if (!resultado) return '—'
+  if (resultado.puntos === null) return 'No rindió'
   let marca: string | number = resultado.marca
   if (ejercicio === 'resistencia') marca = segundosATiempo(resultado.marca)
   else if (ejercicio === 'saltoLargo') marca = `${resultado.marca.toFixed(2)} m`
@@ -21,6 +22,7 @@ function crearFilaResumen(alumno: Alumno): HTMLElement {
   const fila = el('tr')
   fila.append(
     el('td', { texto: `${alumno.apellido}, ${alumno.nombre}` }),
+    el('td', { texto: alumno.dni ?? '—' }),
     el('td', { texto: celdaEjercicio(alumno, 'resistencia') }),
     el('td', { texto: celdaEjercicio(alumno, 'abdominales') }),
     el('td', { texto: celdaEjercicio(alumno, 'flexiones') }),
@@ -77,7 +79,7 @@ export async function render(contenedor: HTMLElement, parametros: ParametrosRuta
     contenedor.append(el('p', { clase: 'texto-ayuda', texto: 'Esta sesión no tiene alumnos cargados.' }))
   } else {
     const encabezado = el('tr', {
-      hijos: ['Apellido y nombre', 'Resistencia', 'Abdominales', 'Flexiones', 'Salto', 'Promedio', 'Resultado'].map(
+      hijos: ['Apellido y nombre', 'DNI', 'Resistencia', 'Abdominales', 'Flexiones', 'Salto', 'Promedio', 'Resultado'].map(
         (texto) => el('th', { texto }),
       ),
     })

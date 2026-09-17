@@ -1,9 +1,10 @@
 // Pantalla principal de carga: un ejercicio, todos los alumnos, autosave por fila.
 
 import { obtenerSesion } from '../../data/sesiones.repo.ts'
-import { actualizarResultadoEjercicio, listarAlumnosDeSesion } from '../../data/alumnos.repo.ts'
+import { actualizarResultadoEjercicio, EJERCICIOS, listarAlumnosDeSesion } from '../../data/alumnos.repo.ts'
 import { crearInputTiempo } from '../components/inputTiempo.ts'
 import { crearInputDecimal } from '../components/inputDecimal.ts'
+import { crearTemporizador } from '../components/temporizador.ts'
 import { metrosDesdeCentimetros, segundosATiempo, tiempoASegundos } from '../../domain/parseo.ts'
 import { el } from '../dom.ts'
 import { generacionVista, navegar, type ParametrosRuta } from '../router.ts'
@@ -17,10 +18,14 @@ const ETIQUETAS_EJERCICIO: Record<Ejercicio, string> = {
 }
 
 const AYUDA_EJERCICIO: Record<Ejercicio, string> = {
-  resistencia: 'Tocá la fila y escribí el tiempo (se arma solo como mm:ss). Confirmá con Enter o pasando al siguiente campo.',
-  abdominales: 'Cantidad de repeticiones. Confirmá con Enter o pasando al siguiente campo.',
-  flexiones: 'Cantidad de repeticiones. Confirmá con Enter o pasando al siguiente campo.',
-  saltoLargo: 'Distancia en CENTÍMETROS, sin coma (ej: 180 = 1,80 m). Confirmá con Enter o pasando al siguiente campo.',
+  resistencia:
+    'Tocá la fila y escribí el tiempo (se arma solo como mm:ss). Confirmá con Enter o pasando al siguiente campo. Si el alumno no rinde esta prueba, cargá 0:00.',
+  abdominales:
+    'Cantidad de repeticiones. Confirmá con Enter o pasando al siguiente campo. Si el alumno no rinde esta prueba, cargá 0.',
+  flexiones:
+    'Cantidad de repeticiones. Confirmá con Enter o pasando al siguiente campo. Si el alumno no rinde esta prueba, cargá 0.',
+  saltoLargo:
+    'Distancia en CENTÍMETROS, sin coma (ej: 180 = 1,80 m). Confirmá con Enter o pasando al siguiente campo. Si el alumno no rinde esta prueba, cargá 0.',
 }
 
 function esEjercicioValido(valor: string | undefined): valor is Ejercicio {
@@ -58,6 +63,14 @@ export async function render(contenedor: HTMLElement, parametros: ParametrosRuta
 
   contenedor.append(el('p', { clase: 'texto-ayuda', texto: AYUDA_EJERCICIO[ejercicio] }))
 
+  // El cronómetro de 1 minuto solo tiene sentido en las pruebas que se toman
+  // contrarreloj de esa forma. Resistencia se cronometra con la carrera en sí
+  // (no con un cronómetro de escritorio) y salto en largo no es una prueba de
+  // tiempo, así que no lo necesitan.
+  if (ejercicio === 'abdominales' || ejercicio === 'flexiones') {
+    contenedor.append(crearTemporizador())
+  }
+
   const alumnos = await listarAlumnosDeSesion(sesionId)
   if (alumnos.length === 0) {
     contenedor.append(el('p', { clase: 'texto-ayuda', texto: 'Esta sesión no tiene alumnos cargados.' }))
@@ -70,16 +83,24 @@ export async function render(contenedor: HTMLElement, parametros: ParametrosRuta
   const inputs: HTMLInputElement[] = []
   let pendientes = alumnos.filter((a) => a.resultados[ejercicio] === undefined).length
 
+  const indiceActual = EJERCICIOS.indexOf(ejercicio)
+  const siguienteEjercicio = EJERCICIOS[indiceActual + 1]
+  const destinoAlTerminar = siguienteEjercicio
+    ? `/sesion/${sesionId}/ejercicio/${siguienteEjercicio}`
+    : `/sesion/${sesionId}/ejercicios`
+
   const avisarCargaCompleta = (): void => {
     pendientes -= 1
     if (pendientes > 0) return
     if (generacionVista() !== generacion) return // el profesor ya navegó a otra pantalla
     const aviso = el('p', {
       clase: 'texto-ayuda texto-ayuda--exito',
-      texto: '¡Listo, ya cargaste a todos! Volviendo a la lista de ejercicios…',
+      texto: siguienteEjercicio
+        ? `¡Listo, ya cargaste a todos! Pasando a ${ETIQUETAS_EJERCICIO[siguienteEjercicio]}…`
+        : '¡Listo, ya cargaste a todos! Volviendo a la lista de ejercicios…',
     })
     contenedor.append(aviso)
-    setTimeout(() => navegar(`/sesion/${sesionId}/ejercicios`), 900)
+    setTimeout(() => navegar(destinoAlTerminar), 3000)
   }
 
   alumnos.forEach((alumno, indice) => {
@@ -99,7 +120,7 @@ function crearFilaCarga(
   let yaContabilizado = resultadoActual !== undefined
 
   const fila = el('div', { clase: 'fila-carga' })
-  if (resultadoActual !== undefined) fila.classList.add('fila-carga--cargada')
+  aplicarEstiloCargada(fila, resultadoActual)
 
   const info = el('div', { clase: 'fila-carga-info' })
   info.append(
@@ -147,7 +168,7 @@ function crearFilaCarga(
 
   const indicador = el('span', {
     clase: 'fila-carga-indicador',
-    texto: resultadoActual ? `✓ ${resultadoActual.puntos} pts` : '',
+    texto: resultadoActual ? textoIndicador(resultadoActual.puntos) : '',
   })
   fila.append(indicador)
 
@@ -191,8 +212,8 @@ function crearFilaCarga(
       const actualizado = await actualizarResultadoEjercicio(alumno.id!, ejercicio, marca)
       const resultado = actualizado.resultados[ejercicio]!
       ultimoValorConfirmado = valorTexto
-      indicador.textContent = `✓ ${resultado.puntos} pts`
-      fila.classList.add('fila-carga--cargada')
+      indicador.textContent = textoIndicador(resultado.puntos)
+      aplicarEstiloCargada(fila, resultado)
       if (!yaContabilizado) {
         yaContabilizado = true
         onPrimeraCarga()
@@ -212,4 +233,15 @@ function crearFilaCarga(
   })
 
   return { fila, input }
+}
+
+function textoIndicador(puntos: number | null): string {
+  return puntos === null ? '⚠ No rindió' : `✓ ${puntos} pts`
+}
+
+/** Verde si rindió y sacó puntaje, ámbar si se cargó como "no rindió". */
+function aplicarEstiloCargada(fila: HTMLElement, resultado: { puntos: number | null } | undefined): void {
+  fila.classList.remove('fila-carga--cargada', 'fila-carga--no-rindio')
+  if (resultado === undefined) return
+  fila.classList.add(resultado.puntos === null ? 'fila-carga--no-rindio' : 'fila-carga--cargada')
 }

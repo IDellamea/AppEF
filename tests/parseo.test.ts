@@ -47,7 +47,10 @@ describe('metrosDesdeCentimetros', () => {
   })
 
   it('lanza error fuera del rango razonable (nadie salta 20 metros o más)', () => {
-    expect(() => metrosDesdeCentimetros('0')).toThrow()
     expect(() => metrosDesdeCentimetros('2000')).toThrow()
+  })
+
+  it('"0" es un caso especial permitido: marca de "no rindió", no un error', () => {
+    expect(metrosDesdeCentimetros('0')).toBe(0)
   })
 })

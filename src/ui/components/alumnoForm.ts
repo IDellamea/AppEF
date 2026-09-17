@@ -7,6 +7,7 @@ import type { Sexo } from '../../domain/types.ts'
 export interface DatosNuevoAlumno {
   nombre: string
   apellido: string
+  dni: string
   edad: number
   sexo: Sexo
   lugarTrabajo: string
@@ -41,6 +42,15 @@ export function crearAlumnoForm(
   const inputApellido = crearInputTexto('Apellido')
   const inputNombre = crearInputTexto('Nombre')
 
+  const inputDni = document.createElement('input')
+  inputDni.type = 'text'
+  inputDni.inputMode = 'numeric'
+  inputDni.placeholder = 'DNI'
+  inputDni.autocomplete = 'off'
+  inputDni.addEventListener('input', () => {
+    inputDni.value = inputDni.value.replace(/\D/g, '')
+  })
+
   const inputEdad = document.createElement('input')
   inputEdad.type = 'number'
   inputEdad.inputMode = 'numeric'
@@ -58,6 +68,7 @@ export function crearAlumnoForm(
   form.append(
     campoConEtiqueta('Apellido', inputApellido),
     campoConEtiqueta('Nombre', inputNombre),
+    campoConEtiqueta('DNI', inputDni),
     campoConEtiqueta('Edad', inputEdad),
     campoConEtiqueta('Sexo', selectSexo),
     campoConEtiqueta('Lugar de trabajo', inputLugar),
@@ -80,11 +91,12 @@ export function crearAlumnoForm(
 
     const apellido = inputApellido.value.trim()
     const nombre = inputNombre.value.trim()
+    const dni = inputDni.value.trim()
     const lugarTrabajo = inputLugar.value.trim()
     const jerarquia = inputJerarquia.value.trim()
     const sexo = selectSexo.value as Sexo
 
-    if (!apellido || !nombre || !inputEdad.value || !lugarTrabajo || !jerarquia) {
+    if (!apellido || !nombre || !dni || !inputEdad.value || !lugarTrabajo || !jerarquia) {
       mostrarError('Completá todos los campos.')
       return
     }
@@ -102,10 +114,11 @@ export function crearAlumnoForm(
     }
 
     void Promise.resolve(
-      onAgregar({ nombre, apellido, edad, sexo, lugarTrabajo, jerarquia }),
+      onAgregar({ nombre, apellido, dni, edad, sexo, lugarTrabajo, jerarquia }),
     ).then(() => {
       inputApellido.value = ''
       inputNombre.value = ''
+      inputDni.value = ''
       inputEdad.value = ''
       inputApellido.focus()
     })

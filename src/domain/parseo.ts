@@ -33,14 +33,19 @@ export function segundosATiempo(segundos: number): string {
  * marca tal como la lee en la cinta métrica (en cm) para evitar el error más
  * común de este campo: olvidarse la coma decimal. Como nadie salta 20 metros
  * o más, cualquier valor fuera de ese rango es un error de tipeo.
+ *
+ * "0" es un caso especial permitido: es la marca que usa el profesor para
+ * indicar que el alumno no rindió esta prueba (ver `MARCA_NO_RINDIO` en
+ * scoring.ts), no un error.
  */
 export function metrosDesdeCentimetros(texto: string): number {
   const digitos = texto.trim().replace(/\D/g, '')
   if (!digitos) {
-    throw new Error('Ingresá la distancia en centímetros (ej: 180).')
+    throw new Error('Ingresá la distancia en centímetros (ej: 180), o 0 si no rindió.')
   }
   const centimetros = Number(digitos)
-  if (centimetros <= 0 || centimetros >= 2000) {
+  if (centimetros === 0) return 0
+  if (centimetros >= 2000) {
     throw new Error('Revisá el valor: tiene que estar entre 1 y 1999 cm (nadie salta 20 m o más).')
   }
   return centimetros / 100

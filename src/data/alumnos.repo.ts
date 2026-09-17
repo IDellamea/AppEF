@@ -1,7 +1,7 @@
 // Repositorio de alumnos evaluados dentro de una sesión.
 
 import { db } from './db.ts'
-import { calcularPuntajeEjercicio, calcularResultadoFinal } from '../domain/scoring.ts'
+import { calcularResultadoEjercicio, calcularResultadoFinal } from '../domain/scoring.ts'
 import { tablasExigencia } from '../domain/exigencia/index.ts'
 import type { Alumno, Ejercicio } from '../domain/types.ts'
 
@@ -49,18 +49,18 @@ export async function actualizarResultadoEjercicio(
     throw new Error(`No existe el alumno con id ${alumnoId}`)
   }
 
-  const puntos = calcularPuntajeEjercicio(tablasExigencia, alumno.sexo, alumno.edad, ejercicio, marca)
+  const resultado = calcularResultadoEjercicio(tablasExigencia, alumno.sexo, alumno.edad, ejercicio, marca)
 
-  const resultados = { ...alumno.resultados, [ejercicio]: { marca, puntos } }
+  const resultados = { ...alumno.resultados, [ejercicio]: resultado }
 
   const cambios: Partial<Alumno> = { resultados }
 
-  const puntajes = EJERCICIOS.map((e) => resultados[e]?.puntos)
-  const completo = puntajes.every((p): p is number => p !== undefined)
+  // "Cargado" significa que el profesor ingresó algo para este ejercicio
+  // (incluso un "no rindió", puntos: null) — no que haya un puntaje numérico.
+  const completo = EJERCICIOS.every((e) => resultados[e] !== undefined)
   if (completo) {
-    const { promedio, aprobado } = calcularResultadoFinal(
-      puntajes as [number, number, number, number],
-    )
+    const puntajes = EJERCICIOS.map((e) => resultados[e]!.puntos)
+    const { promedio, aprobado } = calcularResultadoFinal(puntajes)
     cambios.promedio = promedio
     cambios.aprobado = aprobado
   } else {

@@ -37,7 +37,13 @@ export type TablasExigencia = Record<Sexo, Record<RangoEtario, TablasPorEjercici
 
 export interface ResultadoEjercicio {
   marca: number
-  puntos: number
+  /**
+   * Puntos de 10 a 100, o `null` si el alumno no rindió esta prueba (el
+   * profesor cargó 0 a propósito, ej. por lesión). Un resultado con
+   * `puntos: null` cuenta como "cargado" para completar las 4 pruebas, pero
+   * no participa del promedio final.
+   */
+  puntos: number | null
 }
 
 export interface Alumno {
@@ -45,6 +51,9 @@ export interface Alumno {
   sesionId: number
   nombre: string
   apellido: string
+  /** Documento Nacional de Identidad. Opcional solo por compatibilidad con
+   * alumnos cargados antes de agregar este campo. */
+  dni?: string
   edad: number
   sexo: Sexo
   lugarTrabajo: string

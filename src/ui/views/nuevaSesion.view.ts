@@ -120,7 +120,7 @@ function crearFilaAlumno(alumno: Alumno, alRefrescar: () => Promise<void>): HTML
   const fila = el('div', { clase: 'fila-alumno' })
   fila.append(
     el('span', {
-      texto: `${alumno.apellido}, ${alumno.nombre} — ${alumno.edad} años (${alumno.sexo === 'M' ? 'masculino' : 'femenino'})`,
+      texto: `${alumno.apellido}, ${alumno.nombre} — DNI ${alumno.dni ?? '—'} — ${alumno.edad} años (${alumno.sexo === 'M' ? 'masculino' : 'femenino'})`,
     }),
   )
   const botonQuitar = el('button', { clase: 'boton boton-peligro boton-chico', texto: 'Quitar' })

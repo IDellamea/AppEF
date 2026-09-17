@@ -7,6 +7,7 @@ import type { Alumno, Ejercicio, Sesion } from '../domain/types.ts'
 const ENCABEZADOS = [
   'Apellido',
   'Nombre',
+  'DNI',
   'Edad',
   'Sexo',
   'Lugar de trabajo',
@@ -33,6 +34,13 @@ function marcaLegible(ejercicio: Ejercicio, marca: number | undefined): number |
   return marca
 }
 
+/** Puntos legibles: "No rindió" si el alumno no tomó esta prueba (puntos null). */
+function puntosLegibles(puntos: number | null | undefined): number | string {
+  if (puntos === undefined) return ''
+  if (puntos === null) return 'No rindió'
+  return puntos
+}
+
 function resultadoLegible(alumno: Alumno): string {
   const todosCargados = (['resistencia', 'abdominales', 'flexiones', 'saltoLargo'] as Ejercicio[]).every(
     (e) => alumno.resultados[e] !== undefined,
@@ -46,19 +54,20 @@ function filaAlumno(alumno: Alumno): Record<(typeof ENCABEZADOS)[number], string
   return {
     Apellido: alumno.apellido,
     Nombre: alumno.nombre,
+    DNI: alumno.dni ?? '',
     Edad: alumno.edad,
     Sexo: alumno.sexo,
     'Lugar de trabajo': alumno.lugarTrabajo,
     Jerarquía: alumno.jerarquia,
     'Resistencia (mm:ss)': marcaLegible('resistencia', r.resistencia?.marca),
-    'Puntos resistencia': r.resistencia?.puntos ?? '',
+    'Puntos resistencia': puntosLegibles(r.resistencia?.puntos),
     Abdominales: marcaLegible('abdominales', r.abdominales?.marca),
-    'Puntos abdominales': r.abdominales?.puntos ?? '',
+    'Puntos abdominales': puntosLegibles(r.abdominales?.puntos),
     Flexiones: marcaLegible('flexiones', r.flexiones?.marca),
-    'Puntos flexiones': r.flexiones?.puntos ?? '',
+    'Puntos flexiones': puntosLegibles(r.flexiones?.puntos),
     'Salto en largo (m)': marcaLegible('saltoLargo', r.saltoLargo?.marca),
-    'Puntos salto': r.saltoLargo?.puntos ?? '',
-    Promedio: alumno.promedio ?? '',
+    'Puntos salto': puntosLegibles(r.saltoLargo?.puntos),
+    Promedio: alumno.promedio !== undefined ? Math.round(alumno.promedio * 10) / 10 : '',
     Resultado: resultadoLegible(alumno),
   }
 }

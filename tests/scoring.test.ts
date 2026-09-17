@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { tablasExigencia } from '../src/domain/exigencia/index.ts'
-import { calcularPuntajeEjercicio, calcularResultadoFinal } from '../src/domain/scoring.ts'
+import {
+  calcularPuntajeEjercicio,
+  calcularResultadoEjercicio,
+  calcularResultadoFinal,
+  MARCA_NO_RINDIO,
+} from '../src/domain/scoring.ts'
 
 describe('calcularPuntajeEjercicio', () => {
   it('masculino hasta25 resistencia: casos de borde de la tabla', () => {
@@ -30,14 +35,42 @@ describe('calcularPuntajeEjercicio', () => {
 
 describe('calcularResultadoFinal', () => {
   it('promedio exacto de 60 aprueba', () => {
-    expect(calcularResultadoFinal([60, 60, 60, 60])).toEqual({ promedio: 60, aprobado: true })
+    expect(calcularResultadoFinal([60, 60, 60, 60])).toEqual({ promedio: 60, aprobado: true, rendidos: 4 })
   })
 
   it('promedio de 50 no aprueba', () => {
-    expect(calcularResultadoFinal([50, 50, 50, 50])).toEqual({ promedio: 50, aprobado: false })
+    expect(calcularResultadoFinal([50, 50, 50, 50])).toEqual({ promedio: 50, aprobado: false, rendidos: 4 })
   })
 
   it('combinación mixta que promedia 60 aprueba', () => {
-    expect(calcularResultadoFinal([70, 70, 50, 50])).toEqual({ promedio: 60, aprobado: true })
+    expect(calcularResultadoFinal([70, 70, 50, 50])).toEqual({ promedio: 60, aprobado: true, rendidos: 4 })
+  })
+
+  it('un ejercicio no rendido (null) se excluye del promedio, no cuenta como 0', () => {
+    // Promedia solo entre las 3 rendidas: (70+70+50)/3 = 63.33..., no /4.
+    const resultado = calcularResultadoFinal([70, 70, 50, null])
+    expect(resultado.rendidos).toBe(3)
+    expect(resultado.promedio).toBeCloseTo((70 + 70 + 50) / 3)
+    expect(resultado.aprobado).toBe(true)
+  })
+
+  it('si no rindió ninguna prueba, desaprueba sin promedio calculable', () => {
+    expect(calcularResultadoFinal([null, null, null, null])).toEqual({
+      promedio: 0,
+      aprobado: false,
+      rendidos: 0,
+    })
+  })
+})
+
+describe('calcularResultadoEjercicio', () => {
+  it('con marca normal, calcula los puntos igual que calcularPuntajeEjercicio', () => {
+    const resultado = calcularResultadoEjercicio(tablasExigencia, 'M', 20, 'resistencia', 397)
+    expect(resultado).toEqual({ marca: 397, puntos: 100 })
+  })
+
+  it('con MARCA_NO_RINDIO (0), devuelve puntos null sin consultar la tabla', () => {
+    const resultado = calcularResultadoEjercicio(tablasExigencia, 'M', 20, 'abdominales', MARCA_NO_RINDIO)
+    expect(resultado).toEqual({ marca: 0, puntos: null })
   })
 })
