@@ -102,11 +102,17 @@ async function crearTarjetaSesion(sesion: Sesion): Promise<HTMLElement> {
   )
   const porcentaje = totalCasillas > 0 ? Math.round((cargadas / totalCasillas) * 100) : 0
 
+  const lugarCompleto = [sesion.lugar, sesion.ciudad].filter(Boolean).join(', ')
+
   const tarjeta = el('div', { clase: 'tarjeta tarjeta-sesion' })
   tarjeta.append(
     el('div', {
       clase: 'tarjeta-titulo',
-      texto: sesion.lugar ? `${sesion.fecha} — ${sesion.lugar}` : sesion.fecha,
+      texto: lugarCompleto ? `${sesion.fecha} — ${lugarCompleto}` : sesion.fecha,
+    }),
+    el('div', {
+      clase: 'tarjeta-detalle',
+      texto: sesion.profesor ? `Prof. ${sesion.profesor}` : 'Sin profesor/a registrado',
     }),
     el('div', {
       clase: 'tarjeta-detalle',

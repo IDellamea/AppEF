@@ -7,47 +7,73 @@ import { el } from '../dom.ts'
 import { navegar } from '../router.ts'
 import type { Alumno } from '../../domain/types.ts'
 
-function crearCampoTexto(etiqueta: string): { contenedor: HTMLElement; input: HTMLInputElement } {
+function crearCampoTexto(etiqueta: string, placeholder?: string): { contenedor: HTMLElement; input: HTMLInputElement } {
   const contenedor = el('label', { clase: 'campo' })
   const input = document.createElement('input')
   input.type = 'text'
+  input.autocomplete = 'off'
+  if (placeholder) input.placeholder = placeholder
   contenedor.append(el('span', { clase: 'campo-etiqueta', texto: etiqueta }), input)
   return { contenedor, input }
 }
 
-function crearCampoFecha(): { contenedor: HTMLElement; input: HTMLInputElement } {
-  const contenedor = el('label', { clase: 'campo' })
-  const input = document.createElement('input')
-  input.type = 'date'
-  input.required = true
-  input.value = new Date().toISOString().slice(0, 10)
-  contenedor.append(el('span', { clase: 'campo-etiqueta', texto: 'Fecha' }), input)
-  return { contenedor, input }
+/** La fecha de la sesión es siempre hoy: no tiene sentido cargar un examen
+ * con otra fecha, así que se muestra fija en vez de un input editable. */
+function crearFechaFija(): { elemento: HTMLElement; valor: string } {
+  const valor = new Date().toISOString().slice(0, 10)
+  const textoFecha = new Date(`${valor}T00:00:00`).toLocaleDateString('es-AR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+  const fechaLegible = textoFecha.charAt(0).toUpperCase() + textoFecha.slice(1)
+  const elemento = el('div', { clase: 'fecha-fija' })
+  elemento.append(
+    el('span', { clase: 'fecha-fija-etiqueta', texto: 'Fecha de la sesión' }),
+    el('span', { clase: 'fecha-fija-valor', texto: fechaLegible }),
+  )
+  return { elemento, valor }
 }
 
 export function render(contenedor: HTMLElement): void {
   contenedor.innerHTML = ''
   contenedor.append(el('h1', { texto: 'Nueva sesión de examen' }))
 
+  const fecha = crearFechaFija()
+
   const form = el('form', { clase: 'formulario' })
-  const campoFecha = crearCampoFecha()
-  const campoLugar = crearCampoTexto('Lugar (opcional)')
+  const campoProfesor = crearCampoTexto('Profesor/a a cargo', 'Nombre y apellido')
+  const filaLugar = el('div', { clase: 'fila-dos-campos' })
+  const campoCiudad = crearCampoTexto('Ciudad', 'Ej: Rawson')
+  const campoLugar = crearCampoTexto('Lugar físico', 'Ej: Polideportivo Municipal')
+  filaLugar.append(campoCiudad.contenedor, campoLugar.contenedor)
+
+  const mensajeError = el('p', { clase: 'mensaje-error oculto' })
 
   const botonCrear = el('button', { clase: 'boton boton-primario', texto: 'Crear sesión' })
   botonCrear.type = 'submit'
 
-  form.append(campoFecha.contenedor, campoLugar.contenedor, botonCrear)
+  form.append(fecha.elemento, campoProfesor.contenedor, filaLugar, mensajeError, botonCrear)
   contenedor.append(form)
 
   form.addEventListener('submit', (evento) => {
     evento.preventDefault()
-    const fecha = campoFecha.input.value
-    if (!fecha) {
-      alert('Ingresá una fecha para la sesión.')
+    mensajeError.classList.add('oculto')
+
+    const profesor = campoProfesor.input.value.trim()
+    const ciudad = campoCiudad.input.value.trim()
+    const lugar = campoLugar.input.value.trim()
+
+    if (!profesor || !ciudad || !lugar) {
+      mensajeError.textContent = 'Completá profesor/a, ciudad y lugar antes de continuar.'
+      mensajeError.classList.remove('oculto')
       return
     }
-    const lugar = campoLugar.input.value.trim() || undefined
-    void crearSesion({ fecha, lugar }).then((sesionId) => mostrarPasoAlumnos(contenedor, sesionId))
+
+    void crearSesion({ fecha: fecha.valor, profesor, ciudad, lugar }).then((sesionId) =>
+      mostrarPasoAlumnos(contenedor, sesionId),
+    )
   })
 }
 

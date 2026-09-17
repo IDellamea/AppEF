@@ -69,10 +69,27 @@ function nombreHojaValido(texto: string): string {
   return limpio.slice(0, 31) || 'Sesion'
 }
 
+/**
+ * Arma la hoja de una sesión: un par de filas con los datos de la sesión
+ * (profesor, ciudad, lugar) arriba, y debajo la tabla de alumnos.
+ */
+function crearHojaSesion(sesion: Sesion, alumnos: Alumno[]): XLSX.WorkSheet {
+  const hoja = XLSX.utils.aoa_to_sheet([
+    [`Fecha: ${sesion.fecha}`],
+    [`Profesor/a: ${sesion.profesor ?? '—'}`],
+    [`Ciudad: ${sesion.ciudad ?? '—'}    Lugar: ${sesion.lugar ?? '—'}`],
+    [],
+  ])
+  XLSX.utils.sheet_add_json(hoja, alumnos.map(filaAlumno), {
+    header: [...ENCABEZADOS],
+    origin: 'A5',
+  })
+  return hoja
+}
+
 /** Genera y descarga un archivo Excel con los resultados de una sesión. */
 export function generarExcelSesion(sesion: Sesion, alumnos: Alumno[]): void {
-  const filas = alumnos.map(filaAlumno)
-  const hoja = XLSX.utils.json_to_sheet(filas, { header: [...ENCABEZADOS] })
+  const hoja = crearHojaSesion(sesion, alumnos)
   const libro = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(libro, hoja, nombreHojaValido(sesion.fecha))
   XLSX.writeFile(libro, `examen-ef_${sesion.fecha}.xlsx`)
@@ -93,6 +110,8 @@ export function generarExcelHistorico(
       conResultado.length > 0 ? Math.round((aprobados / conResultado.length) * 100) : 0
     return {
       Fecha: sesion.fecha,
+      'Profesor/a': sesion.profesor ?? '',
+      Ciudad: sesion.ciudad ?? '',
       Lugar: sesion.lugar ?? '',
       'Cantidad de alumnos': alumnos.length,
       '% aprobados': porcentajeAprobados,
@@ -104,8 +123,7 @@ export function generarExcelHistorico(
   const nombresUsados = new Set<string>(['Resumen'])
   for (const sesion of sesiones) {
     const alumnos = alumnosPorSesion.get(sesion.id ?? -1) ?? []
-    const filas = alumnos.map(filaAlumno)
-    const hoja = XLSX.utils.json_to_sheet(filas, { header: [...ENCABEZADOS] })
+    const hoja = crearHojaSesion(sesion, alumnos)
     let nombre = nombreHojaValido(sesion.fecha)
     let sufijo = 2
     while (nombresUsados.has(nombre)) {

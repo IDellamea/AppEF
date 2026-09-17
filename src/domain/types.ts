@@ -57,6 +57,12 @@ export interface Alumno {
 export interface Sesion {
   id?: number
   fecha: string
+  /** Profesor/a que toma el examen. Opcional solo por compatibilidad con
+   * sesiones creadas antes de agregar este campo. */
+  profesor?: string
+  /** Ciudad donde se toma el examen (ej. "Rawson"). */
+  ciudad?: string
+  /** Lugar físico/predio donde se toma el examen (ej. "Polideportivo Municipal"). */
   lugar?: string
   creadaEn: number
 }

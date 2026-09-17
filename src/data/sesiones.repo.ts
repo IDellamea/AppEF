@@ -4,9 +4,16 @@ import { db } from './db.ts'
 import type { Sesion } from '../domain/types.ts'
 
 /** Crea una nueva sesión de examen y devuelve su id. */
-export async function crearSesion(datos: { fecha: string; lugar?: string }): Promise<number> {
+export async function crearSesion(datos: {
+  fecha: string
+  profesor: string
+  ciudad: string
+  lugar: string
+}): Promise<number> {
   const id = await db.sesiones.add({
     fecha: datos.fecha,
+    profesor: datos.profesor,
+    ciudad: datos.ciudad,
     lugar: datos.lugar,
     creadaEn: Date.now(),
   })

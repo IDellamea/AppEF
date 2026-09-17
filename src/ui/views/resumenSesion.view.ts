@@ -54,7 +54,18 @@ export async function render(contenedor: HTMLElement, parametros: ParametrosRuta
     return
   }
 
+  const lugarCompleto = [sesion.lugar, sesion.ciudad].filter(Boolean).join(', ')
   contenedor.append(el('h1', { texto: `Resumen — ${sesion.fecha}` }))
+  if (sesion.profesor || lugarCompleto) {
+    contenedor.append(
+      el('p', {
+        clase: 'texto-ayuda',
+        texto: [sesion.profesor ? `Prof. ${sesion.profesor}` : null, lugarCompleto || null]
+          .filter(Boolean)
+          .join(' · '),
+      }),
+    )
+  }
 
   const alumnos = await listarAlumnosDeSesion(sesionId)
 
