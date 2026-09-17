@@ -440,11 +440,12 @@ select:focus {
   color: var(--color-primario-oscuro);
 }
 
-.enlace-descarga-apk {
-  display: block;
-  text-align: center;
-  text-decoration: none;
+.bloque-instalacion {
   margin: 4px 0 16px;
+}
+
+.bloque-instalacion .texto-ayuda {
+  text-align: center;
 }
 
 .pie-version {

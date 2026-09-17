@@ -85,34 +85,35 @@ abierto en Chrome:
 
 **`https://idellamea.github.io/AppEF/`**
 
-Ahí mismo, en la pantalla de inicio, hay un botón **"⬇ Descargar app para
-Android (.apk)"**. Al tocarlo:
+En la pantalla de inicio hay un botón **"📲 Instalar app"** que dispara el
+diálogo nativo de instalación de Chrome (el mismo mecanismo estándar de
+cualquier PWA, sin pasar por ningún archivo `.apk`). Al confirmarlo, la app
+queda instalada con su propio ícono, y se abre **sin ninguna barra de
+navegador ni URL visible** (porque el manifest ya declara
+`display: "standalone"`).
 
-1. Chrome descarga el archivo `ExamenEF.apk`.
-2. Al abrirlo, Android va a pedir habilitar "Instalar apps de orígenes
-   desconocidos" para Chrome (o el gestor de archivos) — es un permiso único
-   por app instaladora, no hay que repetirlo cada vez.
-3. Se instala como una app normal, con su propio ícono, **sin ninguna barra
-   de navegador ni URL visible** (gracias a la verificación de Digital Asset
-   Links configurada en `idellamea.github.io/.well-known/assetlinks.json`).
+No hace falta compartir ningún archivo por WhatsApp ni Drive, ni habilitar
+"orígenes desconocidos": es la instalación nativa de PWA de Android. El
+contenido se actualiza solo con cada push a `main` (ver arriba) — no hay
+ningún paso extra de por medio, porque no existe un `.apk` separado que
+mantener sincronizado.
 
-No hace falta pasar el archivo por WhatsApp ni Drive: cualquiera con ese link
-se instala la app sola. El contenido de la app se sigue actualizando solo con
-cada push a `main` (ver arriba); el `.apk` en sí solo cambia si se toca el
-"cascarón" nativo (ver `android-twa/BUILD-NOTES.md`), y en ese caso hay que
-reemplazar `public/descargas/ExamenEF.apk` por el nuevo build y volver a
-publicar.
+Si el botón tarda unos segundos en activarse es normal (Chrome recién ofrece
+instalar la PWA una vez que verifica el manifest y el service worker); si
+después de unos segundos sigue sin activarse, la pantalla muestra
+instrucciones manuales ("menú del navegador → Instalar app / Agregar a
+pantalla de inicio") como respaldo.
 
-### Alternativa: PWABuilder (sin compilar nada localmente)
+### Empaquetado como .apk (Bubblewrap/TWA) — descartado
 
-Si en algún momento no se dispone de las herramientas de `android-twa/`
-(JDK/Android SDK locales), se puede regenerar el mismo tipo de `.apk` desde
-[pwabuilder.com](https://www.pwabuilder.com/): pegar la URL publicada,
-analizar, y descargar el paquete para Android. El resultado cumple la misma
-función, pero **hay que volver a firmarlo con la keystore de
-`android-twa/android.keystore`** si se quiere mantener la misma identidad de
-app (si no, Android lo trata como una app distinta y no se puede "actualizar"
-sobre una instalación existente).
+Se probó también empaquetar la app como un `.apk` instalable (TWA vía
+Bubblewrap, con firma propia y Digital Asset Links) y funcionó correctamente
+en un dispositivo real. Se descartó como camino principal porque la
+instalación de PWA nativa ya cumple el mismo objetivo (sin URL visible, con
+ícono propio, actualización automática) sin el costo de mantener un artefacto
+separado. El trabajo queda documentado en `android-twa/BUILD-NOTES.md` por si
+en el futuro hace falta un `.apk` real (por ejemplo, para publicarlo en
+Google Play) — no se usa en la distribución actual.
 
 ## Estructura del proyecto
 

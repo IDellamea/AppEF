@@ -2,6 +2,7 @@
 
 import { eliminarSesion, listarSesiones } from '../../data/sesiones.repo.ts'
 import { EJERCICIOS, listarAlumnosDeSesion } from '../../data/alumnos.repo.ts'
+import { alCambiarDisponibilidad, estaListaParaInstalar, instalarApp, yaEstaInstalada } from '../../pwa/instalarApp.ts'
 import { el } from '../dom.ts'
 import { navegar } from '../router.ts'
 import type { Sesion } from '../../domain/types.ts'
@@ -18,15 +19,7 @@ export async function render(contenedor: HTMLElement): Promise<void> {
   acciones.append(botonNueva, botonExportar)
   contenedor.append(acciones)
 
-  // Enlace de descarga directa del .apk, para compartir esta misma URL con
-  // cualquier profesor: entra desde el celular, toca acá, y Android le
-  // ofrece instalarlo (sin pasar por WhatsApp/Drive).
-  const enlaceApk = document.createElement('a')
-  enlaceApk.href = `${import.meta.env.BASE_URL}descargas/ExamenEF.apk`
-  enlaceApk.download = 'ExamenEF.apk'
-  enlaceApk.className = 'boton boton-texto enlace-descarga-apk'
-  enlaceApk.textContent = '⬇ Descargar app para Android (.apk)'
-  contenedor.append(enlaceApk)
+  contenedor.append(crearBloqueInstalacion())
 
   const listaContenedor = el('div', { clase: 'lista-sesiones' })
   listaContenedor.append(el('p', { clase: 'texto-ayuda', texto: 'Cargando sesiones...' }))
@@ -48,6 +41,55 @@ export async function render(contenedor: HTMLElement): Promise<void> {
   // Número de versión visible para confirmar de un vistazo si ya llegó una
   // actualización, sin depender de que se note el cartel de "nueva versión".
   contenedor.append(el('p', { clase: 'pie-version', texto: `AppEF v${__APP_VERSION__}` }))
+}
+
+/**
+ * Botón para instalar la PWA (sin pasar por ningún .apk). Usa el evento
+ * nativo `beforeinstallprompt` de Chrome/Android; si ya está instalada, no
+ * muestra nada, y si el navegador todavía no ofreció instalarla, arranca
+ * deshabilitado y se activa solo apenas esté disponible.
+ */
+function crearBloqueInstalacion(): HTMLElement {
+  const contenedor = el('div', { clase: 'bloque-instalacion' })
+  if (yaEstaInstalada()) return contenedor
+
+  const boton = el('button', {
+    clase: 'boton boton-secundario',
+    texto: estaListaParaInstalar() ? '📲 Instalar app' : 'Preparando instalación…',
+  })
+  boton.disabled = !estaListaParaInstalar()
+  boton.addEventListener('click', () => {
+    void instalarApp()
+  })
+  contenedor.append(boton)
+
+  const ayudaFallback = el('p', {
+    clase: 'texto-ayuda oculto',
+    texto: 'Para instalarla: menú del navegador (⋮) → "Instalar app" o "Agregar a pantalla de inicio".',
+  })
+  contenedor.append(ayudaFallback)
+
+  const dejarDeEscuchar = alCambiarDisponibilidad(() => {
+    if (yaEstaInstalada()) {
+      contenedor.innerHTML = ''
+      dejarDeEscuchar()
+      return
+    }
+    boton.disabled = !estaListaParaInstalar()
+    boton.textContent = estaListaParaInstalar() ? '📲 Instalar app' : 'Preparando instalación…'
+  })
+
+  // Si el navegador nunca ofrece instalarla (ej. ya se descartó antes, u
+  // otro navegador sin soporte), mostramos instrucciones manuales en vez de
+  // dejar un botón deshabilitado para siempre.
+  setTimeout(() => {
+    if (!estaListaParaInstalar() && !yaEstaInstalada()) {
+      boton.classList.add('oculto')
+      ayudaFallback.classList.remove('oculto')
+    }
+  }, 2500)
+
+  return contenedor
 }
 
 async function crearTarjetaSesion(sesion: Sesion): Promise<HTMLElement> {
