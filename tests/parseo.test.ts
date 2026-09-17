@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseDecimalComaAr, segundosATiempo, tiempoASegundos } from '../src/domain/parseo.ts'
+import { metrosDesdeCentimetros, segundosATiempo, tiempoASegundos } from '../src/domain/parseo.ts'
 
 describe('tiempoASegundos', () => {
   it('convierte mm:ss a segundos', () => {
@@ -30,17 +30,24 @@ describe('segundosATiempo', () => {
   })
 })
 
-describe('parseDecimalComaAr', () => {
-  it('convierte coma decimal a number', () => {
-    expect(parseDecimalComaAr('1,73')).toBe(1.73)
-    expect(parseDecimalComaAr('2,00')).toBe(2)
+describe('metrosDesdeCentimetros', () => {
+  it('convierte centímetros escritos sin coma a metros', () => {
+    expect(metrosDesdeCentimetros('215')).toBe(2.15)
+    expect(metrosDesdeCentimetros('173')).toBe(1.73)
+    expect(metrosDesdeCentimetros('95')).toBe(0.95)
   })
 
-  it('acepta también punto decimal', () => {
-    expect(parseDecimalComaAr('1.73')).toBe(1.73)
+  it('ignora caracteres que no sean dígitos (ej. si alguien igual escribe la coma)', () => {
+    expect(metrosDesdeCentimetros('2,15')).toBe(2.15)
   })
 
-  it('lanza error con texto inválido', () => {
-    expect(() => parseDecimalComaAr('abc')).toThrow()
+  it('lanza error con texto vacío', () => {
+    expect(() => metrosDesdeCentimetros('')).toThrow()
+    expect(() => metrosDesdeCentimetros('abc')).toThrow()
+  })
+
+  it('lanza error fuera del rango razonable (nadie salta 20 metros o más)', () => {
+    expect(() => metrosDesdeCentimetros('0')).toThrow()
+    expect(() => metrosDesdeCentimetros('2000')).toThrow()
   })
 })

@@ -1,4 +1,7 @@
-// Input numérico que acepta coma o punto decimal (para el salto en largo, en metros).
+// Input para el salto en largo: el profesor escribe la distancia en
+// centímetros, tal como la lee en la cinta métrica, sin coma ni punto
+// decimal (ej. "215" = 2,15 m). Esto evita el error más común del campo
+// (olvidarse la coma). Solo admite dígitos.
 
 export interface OpcionesInputDecimal {
   valorInicial?: string
@@ -7,22 +10,14 @@ export interface OpcionesInputDecimal {
 export function crearInputDecimal(opciones?: OpcionesInputDecimal): HTMLInputElement {
   const input = document.createElement('input')
   input.type = 'text'
-  input.inputMode = 'decimal'
+  input.inputMode = 'numeric'
   input.autocomplete = 'off'
-  input.placeholder = '0,00'
+  input.placeholder = 'cm (ej: 180)'
   input.className = 'input-marca input-decimal'
   if (opciones?.valorInicial) input.value = opciones.valorInicial
 
   input.addEventListener('input', () => {
-    // Permite dígitos y un único separador decimal (coma o punto).
-    let valor = input.value.replace(/[^0-9.,]/g, '')
-    const primerSeparador = valor.search(/[.,]/)
-    if (primerSeparador !== -1) {
-      const antes = valor.slice(0, primerSeparador + 1)
-      const despues = valor.slice(primerSeparador + 1).replace(/[.,]/g, '')
-      valor = antes + despues
-    }
-    input.value = valor
+    input.value = input.value.replace(/\D/g, '')
   })
 
   return input

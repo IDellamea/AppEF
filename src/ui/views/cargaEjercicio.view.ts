@@ -4,9 +4,9 @@ import { obtenerSesion } from '../../data/sesiones.repo.ts'
 import { actualizarResultadoEjercicio, listarAlumnosDeSesion } from '../../data/alumnos.repo.ts'
 import { crearInputTiempo } from '../components/inputTiempo.ts'
 import { crearInputDecimal } from '../components/inputDecimal.ts'
-import { parseDecimalComaAr, segundosATiempo, tiempoASegundos } from '../../domain/parseo.ts'
+import { metrosDesdeCentimetros, segundosATiempo, tiempoASegundos } from '../../domain/parseo.ts'
 import { el } from '../dom.ts'
-import { navegar, type ParametrosRuta } from '../router.ts'
+import { generacionVista, navegar, type ParametrosRuta } from '../router.ts'
 import type { Alumno, Ejercicio } from '../../domain/types.ts'
 
 const ETIQUETAS_EJERCICIO: Record<Ejercicio, string> = {
@@ -20,7 +20,7 @@ const AYUDA_EJERCICIO: Record<Ejercicio, string> = {
   resistencia: 'Tocá la fila y escribí el tiempo (se arma solo como mm:ss). Confirmá con Enter o pasando al siguiente campo.',
   abdominales: 'Cantidad de repeticiones. Confirmá con Enter o pasando al siguiente campo.',
   flexiones: 'Cantidad de repeticiones. Confirmá con Enter o pasando al siguiente campo.',
-  saltoLargo: 'Distancia en metros, con coma o punto decimal (ej: 1,80). Confirmá con Enter o pasando al siguiente campo.',
+  saltoLargo: 'Distancia en CENTÍMETROS, sin coma (ej: 180 = 1,80 m). Confirmá con Enter o pasando al siguiente campo.',
 }
 
 function esEjercicioValido(valor: string | undefined): valor is Ejercicio {
@@ -39,6 +39,7 @@ export async function render(contenedor: HTMLElement, parametros: ParametrosRuta
     return
   }
   const ejercicio: Ejercicio = tipo
+  const generacion = generacionVista()
 
   const sesion = await obtenerSesion(sesionId)
   if (!sesion) {
@@ -67,9 +68,22 @@ export async function render(contenedor: HTMLElement, parametros: ParametrosRuta
   contenedor.append(lista)
 
   const inputs: HTMLInputElement[] = []
+  let pendientes = alumnos.filter((a) => a.resultados[ejercicio] === undefined).length
+
+  const avisarCargaCompleta = (): void => {
+    pendientes -= 1
+    if (pendientes > 0) return
+    if (generacionVista() !== generacion) return // el profesor ya navegó a otra pantalla
+    const aviso = el('p', {
+      clase: 'texto-ayuda texto-ayuda--exito',
+      texto: '¡Listo, ya cargaste a todos! Volviendo a la lista de ejercicios…',
+    })
+    contenedor.append(aviso)
+    setTimeout(() => navegar(`/sesion/${sesionId}/ejercicios`), 900)
+  }
 
   alumnos.forEach((alumno, indice) => {
-    const { fila, input } = crearFilaCarga(alumno, ejercicio, () => inputs[indice + 1])
+    const { fila, input } = crearFilaCarga(alumno, ejercicio, () => inputs[indice + 1], avisarCargaCompleta)
     inputs[indice] = input
     lista.append(fila)
   })
@@ -79,8 +93,10 @@ function crearFilaCarga(
   alumno: Alumno,
   ejercicio: Ejercicio,
   obtenerSiguienteInput: () => HTMLInputElement | undefined,
+  onPrimeraCarga: () => void,
 ): { fila: HTMLElement; input: HTMLInputElement } {
   const resultadoActual = alumno.resultados[ejercicio]
+  let yaContabilizado = resultadoActual !== undefined
 
   const fila = el('div', { clase: 'fila-carga' })
   if (resultadoActual !== undefined) fila.classList.add('fila-carga--cargada')
@@ -99,7 +115,7 @@ function crearFilaCarga(
     })
   } else if (ejercicio === 'saltoLargo') {
     input = crearInputDecimal({
-      valorInicial: resultadoActual ? String(resultadoActual.marca).replace('.', ',') : '',
+      valorInicial: resultadoActual ? String(Math.round(resultadoActual.marca * 100)) : '',
     })
   } else {
     input = document.createElement('input')
@@ -110,6 +126,24 @@ function crearFilaCarga(
   }
   input.classList.add('input-fila-carga')
   fila.append(input)
+
+  let previaMetros: HTMLElement | null = null
+  if (ejercicio === 'saltoLargo') {
+    fila.classList.add('fila-carga--con-previa')
+    previaMetros = el('span', {
+      clase: 'fila-carga-previa',
+      texto: resultadoActual ? `= ${resultadoActual.marca.toFixed(2)} m` : '',
+    })
+    fila.append(previaMetros)
+    input.addEventListener('input', () => {
+      if (!previaMetros) return
+      try {
+        previaMetros.textContent = `= ${metrosDesdeCentimetros(input.value).toFixed(2)} m`
+      } catch {
+        previaMetros.textContent = ''
+      }
+    })
+  }
 
   const indicador = el('span', {
     clase: 'fila-carga-indicador',
@@ -141,7 +175,7 @@ function crearFilaCarga(
       if (ejercicio === 'resistencia') {
         marca = tiempoASegundos(valorTexto)
       } else if (ejercicio === 'saltoLargo') {
-        marca = parseDecimalComaAr(valorTexto)
+        marca = metrosDesdeCentimetros(valorTexto)
       } else {
         if (!/^\d+$/.test(valorTexto)) {
           throw new Error('Ingresá un número entero de repeticiones.')
@@ -159,6 +193,10 @@ function crearFilaCarga(
       ultimoValorConfirmado = valorTexto
       indicador.textContent = `✓ ${resultado.puntos} pts`
       fila.classList.add('fila-carga--cargada')
+      if (!yaContabilizado) {
+        yaContabilizado = true
+        onPrimeraCarga()
+      }
       obtenerSiguienteInput()?.focus()
     } catch (error) {
       mostrarError(error instanceof Error ? error.message : 'No se pudo guardar el resultado.')

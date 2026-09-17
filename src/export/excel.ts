@@ -26,6 +26,10 @@ const ENCABEZADOS = [
 function marcaLegible(ejercicio: Ejercicio, marca: number | undefined): number | string {
   if (marca === undefined) return ''
   if (ejercicio === 'resistencia') return segundosATiempo(marca)
+  // El salto en largo se escribe como texto con 2 decimales fijos (ej. "2.15",
+  // "0.95") para que Excel no le recorte los ceros finales al mostrarlo como
+  // número (p. ej. 2.10 -> "2.1").
+  if (ejercicio === 'saltoLargo') return marca.toFixed(2)
   return marca
 }
 

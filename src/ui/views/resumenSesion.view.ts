@@ -11,7 +11,9 @@ import type { Alumno, Ejercicio } from '../../domain/types.ts'
 function celdaEjercicio(alumno: Alumno, ejercicio: Ejercicio): string {
   const resultado = alumno.resultados[ejercicio]
   if (!resultado) return '—'
-  const marca = ejercicio === 'resistencia' ? segundosATiempo(resultado.marca) : resultado.marca
+  let marca: string | number = resultado.marca
+  if (ejercicio === 'resistencia') marca = segundosATiempo(resultado.marca)
+  else if (ejercicio === 'saltoLargo') marca = `${resultado.marca.toFixed(2)} m`
   return `${marca} (${resultado.puntos} pts)`
 }
 

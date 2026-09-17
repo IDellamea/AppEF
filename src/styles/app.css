@@ -59,6 +59,11 @@ p.texto-ayuda {
   font-size: 0.95rem;
 }
 
+p.texto-ayuda--exito {
+  color: var(--color-exito);
+  font-weight: 700;
+}
+
 .oculto {
   display: none !important;
 }
@@ -306,6 +311,17 @@ select:focus {
 .fila-carga--cargada {
   border-color: var(--color-exito);
   background: #f0fdf4;
+}
+
+.fila-carga--con-previa {
+  grid-template-columns: 1fr 90px 60px 70px;
+}
+
+.fila-carga-previa {
+  font-size: 0.8rem;
+  color: #6b7280;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .fila-carga-info {
